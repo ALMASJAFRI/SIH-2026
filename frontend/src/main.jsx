@@ -395,7 +395,7 @@ function Detail({ item, close }) {
             className="mapframe"
             title="Email journey map"
             srcDoc={item.map_html}
-            sandbox="allow-scripts"
+            sandbox="allow-scripts allow-same-origin allow-popups"
           />
         </Section>
       )}
