@@ -5,8 +5,8 @@ from typing import Optional
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.responses import JSONResponse
-from parser import EmailExtractedData, EmailForensicsExtractor
-import forensics
+from backend.parser import EmailExtractedData, EmailForensicsExtractor
+from backend import forensics
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
