@@ -4,10 +4,28 @@ from pathlib import Path
 from typing import Optional
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from .parser import EmailExtractedData, EmailForensicsExtractor
-from . import forensics
+from parser import EmailExtractedData, EmailForensicsExtractor
+import forensics
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
+# Define the list of origins allowed to access your backend.
+# This should include the URL of your deployed frontend.
+origins = [
+    "https://sih-2026-1-sq7p.onrender.com",  # Your deployed frontend
+    "http://localhost:8000",  # Your local Vite development server
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 load_dotenv()
 
@@ -86,8 +104,6 @@ def run_job(analysis_id, raw):
     finally:
         sqlite_conn.close()
 
-app = FastAPI(title="MailSentinel API", version="1.0")
-app.add_middleware(CORSMiddleware, allow_origins=[x.strip() for x in os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")], allow_methods=["*"], allow_headers=["*"])
 @app.get("/api/health")
 def health(): return {"status": "ok", "integrations": {"openrouter": bool(os.getenv("OPENROUTER_API_KEY")), "virustotal": bool(os.getenv("VT_API_KEY")), "ipinfo": bool(os.getenv("IPINFO_TOKEN"))}}
 @app.post("/api/analyses", status_code=202)
