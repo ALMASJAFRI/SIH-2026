@@ -238,26 +238,52 @@ def save_to_db(conn, extracted_data, verdict: str):
 
 
 def generate_journey_map(extracted_ips, ip_tool_instance):
-    """Same folium journey map as untitled5.py. Returns the folium Map object."""
+    """Folium journey map. Returns the folium Map object, or None if no IP geolocated."""
     chronological_ips = list(reversed(extracted_ips))
-    journey_data = [ip_tool_instance.lookup(ip) for ip in chronological_ips if ip_tool_instance.lookup(ip).get('lat')]
-    if not journey_data: return None
+
+    journey_data = []
+    for ip in chronological_ips:
+        info = ip_tool_instance.lookup(ip)          # ← exactly ONE lookup per IP
+        if info.get("lat") and info.get("lon"):
+            journey_data.append(info)
+
+    if not journey_data:
+        return None
 
     origin = journey_data[0]
-    email_map = folium.Map(location=[origin['lat'], origin['lon']], zoom_start=2, tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', attr='Esri')
-    coordinates_path = []
+    email_map = folium.Map(
+        location=[origin["lat"], origin["lon"]],
+        zoom_start=2,
+        tiles=None,           
+        attr="No basemap",
+    )
 
+    coordinates_path = []
     for index, hop in enumerate(journey_data):
-        coord = (hop['lat'], hop['lon'])
+        coord = (hop["lat"], hop["lon"])
         coordinates_path.append(coord)
-        step_name = "True Origin" if index == 0 else "Final Destination" if index == len(journey_data) - 1 else f"Transit Hop {index}"
-        icon_color = "red" if index == 0 else "green" if index == len(journey_data) - 1 else "blue"
-        folium.Marker(location=coord, popup=f"<b>{step_name}</b><br>IP: {hop['ip']}", tooltip=step_name, icon=folium.Icon(color=icon_color, icon="info-sign")).add_to(email_map)
+
+        if index == 0:
+            step_name, icon_color = "True Origin", "red"
+        elif index == len(journey_data) - 1:
+            step_name, icon_color = "Final Destination", "green"
+        else:
+            step_name, icon_color = f"Transit Hop {index}", "blue"
+
+        folium.Marker(
+            location=coord,
+            popup=f"<b>{step_name}</b><br>IP: {hop['ip']}",
+            tooltip=step_name,
+            icon=folium.Icon(color=icon_color, icon="info-sign"),
+        ).add_to(email_map)
 
     if len(coordinates_path) > 1:
-        folium.PolyLine(coordinates_path, color="red", weight=2.5, opacity=0.8, dash_array='5, 5').add_to(email_map)
-    return email_map
+        folium.PolyLine(
+            coordinates_path,
+            color="red", weight=2.5, opacity=0.8, dash_array="5, 5",
+        ).add_to(email_map)
 
+    return email_map
 
 def generate_timeline_graph(conn):
     """Generates a single continuous line graph showing threat progression over time (same as untitled5.py).
